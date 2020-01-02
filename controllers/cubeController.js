@@ -1,29 +1,28 @@
 const cubeModel = require('../models/cube');
 
 function getHome(req, res) {
-  const { from, to, search } = req.body;
+  const { from, to, search } = req.query;
+  let query = {};
 
-  const findFn = item => {
-    const result = true;
-    if (search) {
-      result = item.name.toLowerCase().includes(search.toLowerCase());
-    }
+  if (search) {
+    query = { ...query, name: { $regex: search } };
+  }
 
-    if (result && from) {
-      result = +item.difficultyLevel >= +from;
-    }
+  if (to) {
+    query = { ...query, difficultyLevel: { $lte: +to } };
+  }
 
-    if (result && to) {
-      result = +item.difficultyLevel <= +to;
-    }
-
-    return result;
-  };
+  if (from) {
+    query = {
+      ...query,
+      difficultyLevel: { ...query.difficultyLevel, $gte: +from }
+    };
+  }
 
   cubeModel
-    .find()
+    .find(query)
     .then(cubes => {
-      res.render('index.hbs', { cubes });
+      res.render('index.hbs', { cubes, from, to, search });
     })
     .catch(console.error);
 }
